@@ -6,7 +6,7 @@ const rateLimiter = require("./middleware/rateLimiter");
 
 const app = express();
 
-app.use(express.json());   // ✅ REQUIRED
+app.use(express.json());
 
 app.use(rateLimiter);
 
