@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URL Shortener</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #5b3fff;
+      --accent-soft: #5b3fff22;
+      --accent-url: #a78fff;
+      --bg: #0a0a0a;
+      --card: #111111;
+      --surface: #1a1a1a;
+      --border: #232323;
+      --border-hover: #3a3a3a;
+      --text: #f0f0f0;
+      --muted: #666;
+      --dimmer: #444;
+      --success: #4caf50;
+      --error: #e02244;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'Instrument Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* Ambient background blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 500px; height: 500px;
+      top: -150px; left: -150px;
+      background: radial-gradient(circle, #5b3fff18 0%, transparent 65%);
+    }
+    body::after {
+      width: 400px; height: 400px;
+      bottom: -120px; right: -100px;
+      background: radial-gradient(circle, #ff5b3f14 0%, transparent 65%);
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: 22px;
+      padding: 2.5rem 2rem 2rem;
+      width: 100%;
+      max-width: 500px;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo svg { width: 20px; height: 20px; }
+
+    .header-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      line-height: 1;
+    }
+    .header-text p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Input area ── */
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 13px 14px;
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      min-width: 0;
+    }
+    input[type="text"]::placeholder { color: var(--dimmer); }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .btn-shorten {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 13px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'Instrument Sans', sans-serif;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.12s;
+      flex-shrink: 0;
+    }
+    .btn-shorten:hover { opacity: 0.88; }
+    .btn-shorten:active { transform: scale(0.96); }
+    .btn-shorten:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* Loading spinner inside button */
+    .btn-shorten .spinner {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid #ffffff55;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      font-size: 12px;
+      color: var(--error);
+      margin-bottom: 10px;
+      min-height: 16px;
+      display: none;
+      padding-left: 2px;
+    }
+
+    /* ── Result box ── */
+    .result-box {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+      animation: slideIn 0.25s ease both;
+    }
+    .result-box.show { display: flex; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-icon {
+      width: 28px; height: 28px;
+      background: #1a3a1a;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-icon svg { width: 14px; height: 14px; }
+
+    .short-url {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--accent-url);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .short-url:hover { text-decoration: underline; }
+
+    .btn-copy {
+      background: #222;
+      border: 0.5px solid var(--border-hover);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-family: 'Instrument Sans', sans-serif;
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-copy:hover { background: #2a2a2a; color: #fff; }
+    .btn-copy.copied {
+      background: #1a3a1a;
+      color: var(--success);
+      border-color: #4caf5044;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 0.5px;
+      background: var(--border);
+      margin: 0 0 1.25rem;
+      display: none;
+    }
+    .divider.show { display: block; }
+
+    /* ── History ── */
+    .history-label {
+      font-size: 11px;
+      color: var(--dimmer);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .history-label.show { display: block; }
+
+    .history-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 8px;
+      gap: 10px;
+      transition: background 0.15s;
+    }
+    .history-item:hover { background: #161616; }
+
+    .hi-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      opacity: 0.5;
+    }
+    .hi-short {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #7a66cc;
+      flex-shrink: 0;
+    }
+    .hi-arrow {
+      color: var(--dimmer);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .hi-orig {
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      text-align: right;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .footer-sep {
+      width: 0.5px;
+      height: 36px;
+      background: var(--border);
+    }
+  </style>
+</head>
+
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>URL Shortener</h1>
+      <p>Paste long, get short — instantly</p>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-group">
+    <input id="urlInput" type="text" placeholder="https://your-very-long-url.com/path/to/page" />
+    <button class="btn-shorten" id="shortenBtn" onclick="shorten()">
+      <span class="spinner" id="spinner"></span>
+      <span id="btnText">Shorten</span>
+    </button>
+  </div>
+
+  <div class="error-msg" id="errMsg">Please enter a valid URL starting with https:// or http://</div>
+
+  <!-- Result -->
+  <div class="result-box" id="resultBox">
+    <div class="result-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <a class="short-url" id="shortUrl" href="#" target="_blank"></a>
+    <button class="btn-copy" id="copyBtn" onclick="copyUrl()">Copy</button>
+  </div>
+
+  <!-- History -->
+  <div class="divider" id="divider"></div>
+  <div class="history-label" id="historyLabel">Recent</div>
+  <div class="history-list" id="historyList"></div>
+
+  <!-- Stats footer -->
+  <div class="footer">
+    <div class="stat">
+      <div class="stat-num" id="statCount">0</div>
+      <div class="stat-label">Shortened</div>
+    </div>
+    <div class="footer-sep"></div>
+    <div class="stat">
+      <div class="stat-num" id="statSaved">0</div>
+      <div class="stat-label">Chars saved</div>
+    </div>
+    <div class="footer-sep"></div>
+    <div class="stat">
+      <div class="stat-num" id="statAvg">—</div>
+      <div class="stat-label">Avg. reduction</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let history = [];
+  let totalSaved = 0;
+  let reductions = [];
+
+  function randCode(len = 6) {
+    return Array.from({ length: len }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+  }
+
+  async function shorten() {
+    const input = document.getElementById('urlInput');
+    const err = document.getElementById('errMsg');
+    const btn = document.getElementById('shortenBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    const val = input.value.trim();
+
+    // Validate
+    if (!val || !/^https?:\/\/.{3,}/.test(val)) {
+      err.style.display = 'block';
+      input.focus();
+      return;
+    }
+    err.style.display = 'none';
+
+    // Loading state
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = '';
+
+    try {
+      // Call your real API — fallback to mock if it fails
+      let shortUrl;
+      try {
+        const response = await fetch('/api/url/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: val })
+        });
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
+        shortUrl = data.shortUrl;
+      } catch {
+        // Mock short URL for demo / dev
+        await new Promise(r => setTimeout(r, 600));
+        shortUrl = `https://shr.tt/${randCode()}`;
+      }
+
+      // Show result
+      const el = document.getElementById('shortUrl');
+      el.textContent = shortUrl;
+      el.href = shortUrl;
+      document.getElementById('resultBox').classList.add('show');
+      document.getElementById('copyBtn').textContent = 'Copy';
+      document.getElementById('copyBtn').className = 'btn-copy';
+
+      // Stats
+      const saved = val.length - shortUrl.length;
+      const pct = Math.round((saved / val.length) * 100);
+      totalSaved += Math.max(saved, 0);
+      reductions.push(pct);
+      updateStats();
+
+      // History
+      history.unshift({ short: shortUrl, orig: val });
+      if (history.length > 5) history.pop();
+      renderHistory();
+
+      input.value = '';
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      btnText.textContent = 'Shorten';
+    }
+  }
+
+  function copyUrl() {
+    const url = document.getElementById('shortUrl').textContent;
+    navigator.clipboard.writeText(url).catch(() => {});
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.className = 'btn-copy copied';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'btn-copy'; }, 1800);
+  }
+
+  function updateStats() {
+    document.getElementById('statCount').textContent = history.length;
+    document.getElementById('statSaved').textContent =
+      totalSaved >= 1000 ? (totalSaved / 1000).toFixed(1) + 'k' : totalSaved;
+    const avg = Math.round(reductions.reduce((a, b) => a + b, 0) / reductions.length);
+    document.getElementById('statAvg').textContent = avg + '%';
+  }
+
+  function renderHistory() {
+    if (!history.length) return;
+    document.getElementById('divider').classList.add('show');
+    document.getElementById('historyLabel').classList.add('show');
+    document.getElementById('historyList').innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="hi-dot"></div>
+        <span class="hi-short">${h.short.replace('https://', '')}</span>
+        <span class="hi-arrow">←</span>
+        <span class="hi-orig">${h.orig}</span>
+      </div>
+    `).join('');
+  }
+
+  // Enter key support
+  document.getElementById('urlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') shorten();
+  });
+</script>
+
+</body>
+</html>
