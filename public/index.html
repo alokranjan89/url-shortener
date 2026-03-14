@@ -1,328 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>URL Shortener</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>URL Shortener</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent:      #5b3fff;
+  --accent-soft: #5b3fff22;
+  --accent-url:  #a78fff;
+  --bg:          #0a0a0a;
+  --card:        #111111;
+  --surface:     #1a1a1a;
+  --border:      #232323;
+  --border-hover:#3a3a3a;
+  --text:        #f0f0f0;
+  --muted:       #666;
+  --dimmer:      #444;
+  --success:     #4caf50;
+  --error:       #e02244;
+  --radius-sm:   8px;
+}
 
-    :root {
-      --accent: #5b3fff;
-      --accent-soft: #5b3fff22;
-      --accent-url: #a78fff;
-      --bg: #0a0a0a;
-      --card: #111111;
-      --surface: #1a1a1a;
-      --border: #232323;
-      --border-hover: #3a3a3a;
-      --text: #f0f0f0;
-      --muted: #666;
-      --dimmer: #444;
-      --success: #4caf50;
-      --error: #e02244;
-      --radius: 14px;
-      --radius-sm: 8px;
-    }
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
 
-    body {
-      font-family: 'Instrument Sans', sans-serif;
-      background: var(--bg);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
+body::before, body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+body::before {
+  width: 500px; height: 500px;
+  top: -150px; left: -150px;
+  background: radial-gradient(circle, #5b3fff18 0%, transparent 65%);
+}
+body::after {
+  width: 400px; height: 400px;
+  bottom: -120px; right: -100px;
+  background: radial-gradient(circle, #ff5b3f14 0%, transparent 65%);
+}
 
-    /* Ambient background blobs */
-    body::before, body::after {
-      content: '';
-      position: fixed;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 0;
-    }
-    body::before {
-      width: 500px; height: 500px;
-      top: -150px; left: -150px;
-      background: radial-gradient(circle, #5b3fff18 0%, transparent 65%);
-    }
-    body::after {
-      width: 400px; height: 400px;
-      bottom: -120px; right: -100px;
-      background: radial-gradient(circle, #ff5b3f14 0%, transparent 65%);
-    }
+.card {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  border: 0.5px solid var(--border);
+  border-radius: 22px;
+  padding: 2.5rem 2rem 2rem;
+  width: 100%;
+  max-width: 500px;
+  animation: fadeUp 0.4s ease both;
+}
 
-    .card {
-      position: relative;
-      z-index: 1;
-      background: var(--card);
-      border: 0.5px solid var(--border);
-      border-radius: 22px;
-      padding: 2.5rem 2rem 2rem;
-      width: 100%;
-      max-width: 500px;
-      animation: fadeUp 0.45s ease both;
-    }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2rem;
+}
+.logo {
+  width: 40px; height: 40px;
+  background: var(--accent);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo svg { width: 20px; height: 20px; }
+.header-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.4px;
+}
+.header-text p { font-size: 13px; color: var(--muted); margin-top: 3px; }
 
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 2rem;
-    }
+/* Input */
+.input-group { display: flex; gap: 8px; margin-bottom: 8px; }
 
-    .logo {
-      width: 40px; height: 40px;
-      background: var(--accent);
-      border-radius: 11px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .logo svg { width: 20px; height: 20px; }
+input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input[type="text"]::placeholder { color: var(--dimmer); }
+input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
 
-    .header-text h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.4px;
-      line-height: 1;
-    }
-    .header-text p {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
+.btn-shorten {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Instrument Sans', sans-serif;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.1s;
+  display: flex; align-items: center; gap: 7px;
+}
+.btn-shorten:hover  { opacity: 0.88; }
+.btn-shorten:active { transform: scale(0.97); }
+.btn-shorten:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-    /* ── Input area ── */
-    .input-group {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
+.spinner {
+  display: none;
+  width: 14px; height: 14px;
+  border: 2px solid #ffffff44;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    input[type="text"] {
-      flex: 1;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 13px 14px;
-      font-size: 13px;
-      font-family: 'DM Mono', monospace;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      min-width: 0;
-    }
-    input[type="text"]::placeholder { color: var(--dimmer); }
-    input[type="text"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
+/* Error */
+.error-msg {
+  font-size: 12px;
+  color: var(--error);
+  min-height: 18px;
+  margin-bottom: 8px;
+  padding-left: 2px;
+  display: none;
+}
 
-    .btn-shorten {
-      background: var(--accent);
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 13px 20px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: 'Instrument Sans', sans-serif;
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: opacity 0.2s, transform 0.12s;
-      flex-shrink: 0;
-    }
-    .btn-shorten:hover { opacity: 0.88; }
-    .btn-shorten:active { transform: scale(0.96); }
-    .btn-shorten:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+/* Result box */
+.result-box {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  animation: slideIn 0.25s ease both;
+}
+.result-box.show { display: flex; }
 
-    /* Loading spinner inside button */
-    .btn-shorten .spinner {
-      display: none;
-      width: 14px; height: 14px;
-      border: 2px solid #ffffff55;
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    .error-msg {
-      font-size: 12px;
-      color: var(--error);
-      margin-bottom: 10px;
-      min-height: 16px;
-      display: none;
-      padding-left: 2px;
-    }
+.result-icon {
+  width: 26px; height: 26px;
+  background: #1a3a1a;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.result-icon svg { width: 13px; height: 13px; }
 
-    /* ── Result box ── */
-    .result-box {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 1.25rem;
-      animation: slideIn 0.25s ease both;
-    }
-    .result-box.show { display: flex; }
+.short-url {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent-url);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.short-url:hover { text-decoration: underline; }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+.btn-action {
+  background: #222;
+  border: 0.5px solid var(--border-hover);
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  color: #aaa;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btn-action:hover { background: #2a2a2a; color: #fff; }
+.btn-action.copied { background: #1a3a1a; color: var(--success); border-color: #4caf5044; }
 
-    .result-icon {
-      width: 28px; height: 28px;
-      background: #1a3a1a;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .result-icon svg { width: 14px; height: 14px; }
+/* Preview card below result */
+.preview-card {
+  display: none;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  animation: slideIn 0.25s ease both;
+}
+.preview-card.show { display: flex; }
 
-    .short-url {
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      color: var(--accent-url);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      text-decoration: none;
-    }
-    .short-url:hover { text-decoration: underline; }
+.preview-favicon {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: #222;
+}
+.preview-info { flex: 1; min-width: 0; }
+.preview-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preview-domain { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.preview-desc {
+  font-size: 11px;
+  color: var(--dimmer);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-    .btn-copy {
-      background: #222;
-      border: 0.5px solid var(--border-hover);
-      border-radius: 6px;
-      padding: 5px 11px;
-      font-size: 12px;
-      font-family: 'Instrument Sans', sans-serif;
-      color: #aaa;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      flex-shrink: 0;
-    }
-    .btn-copy:hover { background: #2a2a2a; color: #fff; }
-    .btn-copy.copied {
-      background: #1a3a1a;
-      color: var(--success);
-      border-color: #4caf5044;
-    }
+/* History */
+.divider { height: 0.5px; background: var(--border); margin: 4px 0 14px; display: none; }
+.divider.show { display: block; }
+.history-label {
+  font-size: 11px; color: var(--dimmer);
+  text-transform: uppercase; letter-spacing: 0.09em;
+  margin-bottom: 8px; display: none;
+}
+.history-label.show { display: block; }
 
-    /* ── Divider ── */
-    .divider {
-      height: 0.5px;
-      background: var(--border);
-      margin: 0 0 1.25rem;
-      display: none;
-    }
-    .divider.show { display: block; }
+.history-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 7px;
+  cursor: pointer; transition: background 0.15s;
+}
+.history-item:hover { background: #161616; }
+.hi-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0.5; flex-shrink: 0; }
+.hi-short { font-family: 'DM Mono', monospace; font-size: 12px; color: #7a66cc; flex-shrink: 0; }
+.hi-sep { font-size: 11px; color: var(--dimmer); flex-shrink: 0; }
+.hi-orig { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
-    /* ── History ── */
-    .history-label {
-      font-size: 11px;
-      color: var(--dimmer);
-      text-transform: uppercase;
-      letter-spacing: 0.09em;
-      margin-bottom: 10px;
-      display: none;
-    }
-    .history-label.show { display: block; }
+/* Stats footer */
+.stats-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.stat { text-align: center; }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.footer-sep { width: 0.5px; height: 32px; background: var(--border); }
 
-    .history-list { display: flex; flex-direction: column; gap: 2px; }
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal-overlay.show { display: flex; }
 
-    .history-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 10px;
-      border-radius: 8px;
-      gap: 10px;
-      transition: background 0.15s;
-    }
-    .history-item:hover { background: #161616; }
+.modal-box {
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 18px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 360px;
+  animation: fadeUp 0.2s ease both;
+}
 
-    .hi-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      opacity: 0.5;
-    }
-    .hi-short {
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      color: #7a66cc;
-      flex-shrink: 0;
-    }
-    .hi-arrow {
-      color: var(--dimmer);
-      font-size: 11px;
-      flex-shrink: 0;
-    }
-    .hi-orig {
-      font-size: 12px;
-      color: var(--muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-      text-align: right;
-    }
+.modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+.modal-shield {
+  width: 36px; height: 36px;
+  background: #1a3a1a;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.modal-shield svg { width: 18px; height: 18px; }
+.modal-title { font-size: 15px; font-weight: 500; color: var(--text); }
+.modal-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-    /* ── Footer ── */
-    .footer {
-      margin-top: 1.75rem;
-      padding-top: 1.25rem;
-      border-top: 0.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+.modal-dest {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 1rem;
+}
+.modal-dest-label { font-size: 11px; color: var(--dimmer); margin-bottom: 4px; }
+.modal-dest-url {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-url);
+  word-break: break-all;
+}
 
-    .stat {
-      text-align: center;
-    }
-    .stat-num {
-      font-family: 'Syne', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .stat-label {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 1px;
-    }
+.modal-preview-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 1.5rem;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+}
+.modal-favicon { width: 24px; height: 24px; border-radius: 5px; object-fit: contain; flex-shrink: 0; }
+.modal-site-title { font-size: 13px; color: var(--text); font-weight: 500; }
+.modal-site-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    .footer-sep {
-      width: 0.5px;
-      height: 36px;
-      background: var(--border);
-    }
-  </style>
+.modal-loading {
+  font-size: 12px;
+  color: var(--dimmer);
+  text-align: center;
+  padding: 10px 0;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+
+.modal-buttons { display: flex; gap: 8px; }
+.btn-continue {
+  flex: 1;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: opacity 0.2s;
+  display: block;
+}
+.btn-continue:hover { opacity: 0.88; }
+.btn-cancel {
+  background: #1e1e1e;
+  border: 0.5px solid var(--border-hover);
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-family: 'Instrument Sans', sans-serif;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-cancel:hover { background: #252525; color: var(--text); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #1e1e1e;
+  border: 0.5px solid #333;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: var(--text);
+  z-index: 2000;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
 </head>
-
 <body>
+
+<!-- Main Card -->
 <div class="card">
 
   <!-- Header -->
@@ -341,16 +428,16 @@
 
   <!-- Input -->
   <div class="input-group">
-    <input id="urlInput" type="text" placeholder="https://your-very-long-url.com/path/to/page" />
+    <input id="urlInput" type="text" placeholder="https://your-very-long-url.com/path/to/page"/>
     <button class="btn-shorten" id="shortenBtn" onclick="shorten()">
       <span class="spinner" id="spinner"></span>
       <span id="btnText">Shorten</span>
     </button>
   </div>
 
-  <div class="error-msg" id="errMsg">Please enter a valid URL starting with https:// or http://</div>
+  <div class="error-msg" id="errMsg"></div>
 
-  <!-- Result -->
+  <!-- Result row -->
   <div class="result-box" id="resultBox">
     <div class="result-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -358,16 +445,27 @@
       </svg>
     </div>
     <a class="short-url" id="shortUrl" href="#" target="_blank"></a>
-    <button class="btn-copy" id="copyBtn" onclick="copyUrl()">Copy</button>
+    <button class="btn-action" id="copyBtn" onclick="copyUrl()">Copy</button>
+    <button class="btn-action" onclick="openPreviewModal()">Preview</button>
+  </div>
+
+  <!-- Preview info card (site title + favicon) -->
+  <div class="preview-card" id="previewCard">
+    <img class="preview-favicon" id="previewFavicon" src="" alt="" onerror="this.style.display='none'"/>
+    <div class="preview-info">
+      <div class="preview-title"  id="previewTitle"></div>
+      <div class="preview-domain" id="previewDomain"></div>
+      <div class="preview-desc"   id="previewDesc"></div>
+    </div>
   </div>
 
   <!-- History -->
   <div class="divider" id="divider"></div>
   <div class="history-label" id="historyLabel">Recent</div>
-  <div class="history-list" id="historyList"></div>
+  <div id="historyList"></div>
 
   <!-- Stats footer -->
-  <div class="footer">
+  <div class="stats-footer">
     <div class="stat">
       <div class="stat-num" id="statCount">0</div>
       <div class="stat-label">Shortened</div>
@@ -386,76 +484,124 @@
 
 </div>
 
+<!-- Preview Confirm Modal -->
+<div class="modal-overlay" id="previewModal" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <div class="modal-shield">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="modal-title">Where does this go?</div>
+        <div class="modal-sub">Check the destination before visiting</div>
+      </div>
+    </div>
+
+    <!-- destination URL -->
+    <div class="modal-dest">
+      <div class="modal-dest-label">Destination URL</div>
+      <div class="modal-dest-url" id="modalDestUrl">Loading...</div>
+    </div>
+
+    <!-- site preview row -->
+    <div class="modal-loading" id="modalLoading">Fetching site info...</div>
+    <div class="modal-preview-row" id="modalPreviewRow">
+      <img class="modal-favicon" id="modalFavicon" src="" alt="" onerror="this.style.display='none'"/>
+      <div>
+        <div class="modal-site-title" id="modalSiteTitle"></div>
+        <div class="modal-site-desc"  id="modalSiteDesc"></div>
+      </div>
+    </div>
+
+    <div class="modal-buttons">
+      <a class="btn-continue" id="continueLink" href="#" target="_blank" onclick="closePreviewModal()">Continue</a>
+      <button class="btn-cancel" onclick="closePreviewModal()">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-  const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let history = [];
-  let totalSaved = 0;
-  let reductions = [];
+  let urlHistory  = [];
+  let totalSaved  = 0;
+  let reductions  = [];
+  let currentCode = null;   // short code of last shortened URL
+  let currentOriginalUrl = null;
 
-  function randCode(len = 6) {
-    return Array.from({ length: len }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
-  }
-
+  // ── Shorten ──────────────────────────────────────────────────
   async function shorten() {
-    const input = document.getElementById('urlInput');
-    const err = document.getElementById('errMsg');
-    const btn = document.getElementById('shortenBtn');
+    const input   = document.getElementById('urlInput');
+    const errMsg  = document.getElementById('errMsg');
+    const btn     = document.getElementById('shortenBtn');
     const spinner = document.getElementById('spinner');
     const btnText = document.getElementById('btnText');
-    const val = input.value.trim();
+    const val     = input.value.trim();
 
-    // Validate
-    if (!val || !/^https?:\/\/.{3,}/.test(val)) {
-      err.style.display = 'block';
-      input.focus();
+    // Reset
+    document.getElementById('resultBox').classList.remove('show');
+    document.getElementById('previewCard').classList.remove('show');
+    errMsg.style.display = 'none';
+
+    if (!val) { showError('Please enter a URL'); return; }
+    if (!/^https?:\/\/.{3,}/.test(val)) {
+      showError('URL must start with https:// or http://');
       return;
     }
-    err.style.display = 'none';
 
-    // Loading state
     btn.disabled = true;
     spinner.style.display = 'inline-block';
     btnText.textContent = '';
 
     try {
-      // Call your real API — fallback to mock if it fails
-      let shortUrl;
-      try {
-        const response = await fetch('/api/url/shorten', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: val })
-        });
-        if (!response.ok) throw new Error('API error');
-        const data = await response.json();
-        shortUrl = data.shortUrl;
-      } catch {
-        // Mock short URL for demo / dev
-        await new Promise(r => setTimeout(r, 600));
-        shortUrl = `https://shr.tt/${randCode()}`;
+      const res  = await fetch('/api/url/shorten', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ url: val }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.message || data.error || 'Something went wrong');
+        return;
       }
 
-      // Show result
+      // Show short URL row
       const el = document.getElementById('shortUrl');
-      el.textContent = shortUrl;
-      el.href = shortUrl;
+      el.textContent = data.shortUrl;
+      el.href        = data.shortUrl;
       document.getElementById('resultBox').classList.add('show');
       document.getElementById('copyBtn').textContent = 'Copy';
-      document.getElementById('copyBtn').className = 'btn-copy';
+      document.getElementById('copyBtn').className   = 'btn-action';
+
+      // Extract code from shortUrl — e.g. http://localhost:5000/api/url/abc123 → abc123
+      currentCode        = data.shortUrl.split('/').pop();
+      currentOriginalUrl = val;
+
+      // Fetch preview from backend and show preview card
+      await loadPreviewCard(currentCode);
 
       // Stats
-      const saved = val.length - shortUrl.length;
-      const pct = Math.round((saved / val.length) * 100);
+      const saved = val.length - data.shortUrl.length;
       totalSaved += Math.max(saved, 0);
-      reductions.push(pct);
+      reductions.push(Math.round((Math.max(saved, 0) / val.length) * 100));
       updateStats();
 
       // History
-      history.unshift({ short: shortUrl, orig: val });
-      if (history.length > 5) history.pop();
+      urlHistory.unshift({ short: data.shortUrl, orig: val, code: currentCode });
+      if (urlHistory.length > 5) urlHistory.pop();
       renderHistory();
 
       input.value = '';
+
+    } catch (err) {
+      showError('Network error — please try again');
+      console.error(err);
     } finally {
       btn.disabled = false;
       spinner.style.display = 'none';
@@ -463,38 +609,129 @@
     }
   }
 
+  // ── Load preview card from backend ───────────────────────────
+  async function loadPreviewCard(code) {
+    try {
+      const res  = await fetch(`/api/url/${code}/preview`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Populate inline preview card
+      document.getElementById('previewFavicon').src        = data.favicon     || '';
+      document.getElementById('previewTitle').textContent  = data.title       || data.domain || '';
+      document.getElementById('previewDomain').textContent = data.domain      || '';
+      document.getElementById('previewDesc').textContent   = data.description || '';
+      document.getElementById('previewCard').classList.add('show');
+
+    } catch (err) {
+      console.warn('[Preview card] fetch failed:', err.message);
+    }
+  }
+
+  // ── Copy ─────────────────────────────────────────────────────
   function copyUrl() {
     const url = document.getElementById('shortUrl').textContent;
     navigator.clipboard.writeText(url).catch(() => {});
     const btn = document.getElementById('copyBtn');
     btn.textContent = 'Copied!';
-    btn.className = 'btn-copy copied';
-    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'btn-copy'; }, 1800);
+    btn.className   = 'btn-action copied';
+    showToast('Copied to clipboard');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'btn-action'; }, 1800);
   }
 
+  // ── Preview modal ─────────────────────────────────────────────
+  async function openPreviewModal() {
+    if (!currentCode) return;
+
+    // Reset modal state
+    document.getElementById('modalDestUrl').textContent    = 'Loading...';
+    document.getElementById('modalSiteTitle').textContent  = '';
+    document.getElementById('modalSiteDesc').textContent   = '';
+    document.getElementById('modalFavicon').src            = '';
+    document.getElementById('continueLink').href           = '#';
+    document.getElementById('modalLoading').style.display  = 'block';
+    document.getElementById('modalPreviewRow').style.display = 'none';
+
+    // Open modal immediately
+    document.getElementById('previewModal').classList.add('show');
+
+    try {
+      // Always fetch fresh from backend — /:code/preview
+      const res  = await fetch(`/api/url/${currentCode}/preview`);
+      if (!res.ok) throw new Error('Preview fetch failed');
+      const data = await res.json();
+
+      // Populate modal
+      document.getElementById('modalDestUrl').textContent   = data.originalUrl  || currentOriginalUrl || '';
+      document.getElementById('modalFavicon').src           = data.favicon       || '';
+      document.getElementById('modalSiteTitle').textContent = data.title         || data.domain || '';
+      document.getElementById('modalSiteDesc').textContent  = data.description   || '';
+      document.getElementById('continueLink').href          = data.originalUrl   || currentOriginalUrl || '#';
+
+    } catch (err) {
+      // Fallback — at minimum show the original URL
+      document.getElementById('modalDestUrl').textContent   = currentOriginalUrl || '';
+      document.getElementById('continueLink').href          = currentOriginalUrl || '#';
+      document.getElementById('modalSiteTitle').textContent = 'Could not load site info';
+      console.warn('[Preview modal] fetch failed:', err.message);
+    } finally {
+      document.getElementById('modalLoading').style.display   = 'none';
+      document.getElementById('modalPreviewRow').style.display = 'flex';
+    }
+  }
+
+  function closePreviewModal() {
+    document.getElementById('previewModal').classList.remove('show');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('previewModal')) closePreviewModal();
+  }
+
+  // ── History ───────────────────────────────────────────────────
+  function renderHistory() {
+    if (!urlHistory.length) return;
+    document.getElementById('divider').classList.add('show');
+    document.getElementById('historyLabel').classList.add('show');
+    document.getElementById('historyList').innerHTML = urlHistory.map(h => `
+      <div class="history-item" onclick="reuseHistory('${h.orig}')">
+        <div class="hi-dot"></div>
+        <span class="hi-short">${h.short.replace(/^https?:\/\/[^/]+\//, '')}</span>
+        <span class="hi-sep">←</span>
+        <span class="hi-orig">${h.orig}</span>
+      </div>
+    `).join('');
+  }
+
+  function reuseHistory(url) {
+    document.getElementById('urlInput').value = url;
+    document.getElementById('urlInput').focus();
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────
   function updateStats() {
-    document.getElementById('statCount').textContent = history.length;
+    document.getElementById('statCount').textContent = urlHistory.length;
     document.getElementById('statSaved').textContent =
       totalSaved >= 1000 ? (totalSaved / 1000).toFixed(1) + 'k' : totalSaved;
     const avg = Math.round(reductions.reduce((a, b) => a + b, 0) / reductions.length);
     document.getElementById('statAvg').textContent = avg + '%';
   }
 
-  function renderHistory() {
-    if (!history.length) return;
-    document.getElementById('divider').classList.add('show');
-    document.getElementById('historyLabel').classList.add('show');
-    document.getElementById('historyList').innerHTML = history.map(h => `
-      <div class="history-item">
-        <div class="hi-dot"></div>
-        <span class="hi-short">${h.short.replace('https://', '')}</span>
-        <span class="hi-arrow">←</span>
-        <span class="hi-orig">${h.orig}</span>
-      </div>
-    `).join('');
+  // ── Toast ─────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
   }
 
-  // Enter key support
+  // ── Helpers ───────────────────────────────────────────────────
+  function showError(msg) {
+    const el = document.getElementById('errMsg');
+    el.textContent    = msg;
+    el.style.display  = 'block';
+  }
+
   document.getElementById('urlInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') shorten();
   });
